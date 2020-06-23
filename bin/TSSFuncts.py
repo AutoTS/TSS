@@ -7,6 +7,7 @@ import sys, os, shutil, numpy as np
 inputs = {}
 coords = []
 
+#We need to add a crest_selectivity default
 def default():
 	iF = open(os.path.expanduser("~/TSS/bin/.default"), "r")
 	line = iF.readline()
@@ -32,6 +33,8 @@ def default():
 	inputs["opt"] = "modred"
 	return inputs
 
+
+#Need to include a crest_selectivity parameter
 def parseInput(inputFile, inputs):
 	name = inputFile.split('.')[0]
 	extension = inputFile.split('.')[1]
