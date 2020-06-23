@@ -162,7 +162,6 @@ def buildLibraryInputs(lib_location):
 	for i in range(1, atomNumber + 1):
 		line = tempF.readline()
 		if str(i) in inputs["subtract"]:
-			print("should skip" + str(i))
 			pass
 		#elif i in inputs["substitute"]:
 		#elif i in inputs["add"]:
