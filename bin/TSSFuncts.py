@@ -171,10 +171,11 @@ def buildLibraryInputs(lib_location):
 
 
 def modredConformers(crest_conformers_file, inputs):
-    f_name = 'crest_conformers.xyz' ## default
-    iF = open(f_name, 'r')
-    buildCom()
-    ## under construction
+	#What are the inputs?
+	f_name = 'crest_conformers.xyz' ## default
+	iF = open(f_name, 'r')
+	buildCom() #You will need to pass the parameter into this function
+	## under construction
     
     
     
