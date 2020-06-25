@@ -1,5 +1,5 @@
 #!/bin/env python3
-
+#small comment
 #Written By Taylor Nielson
 
 import sys, os, shutil, numpy as np
