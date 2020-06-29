@@ -172,15 +172,23 @@ def buildLibraryInputs(lib_location):
 			finalF.write(line)
 
 
-def modredConformers(crest_conformers_file, inputs):
-	#What are the inputs?
-	f_name = 'crest_conformers.xyz' ## default
-	iF = open(f_name, 'r')
-	buildCom() #You will need to pass the parameter into this function
-	## under construction
-    
-    
-    
+def modredCrest(crest_file, inputs):
+	iF = open(crest_file, 'r')
+	num_structures = 1
+	line = iF.readline()
+	while line:
+		line = iF.readline()
+		line = iF.readline()
+		coords = []
+		while line:
+			if line.strip()[0].isalpha():
+				coords.append(line)
+				line = iF.readline()
+			else:
+				break
+		oF_name = "conf" + str(num_structures) + ".com"
+		buildCom(inputs, coords, oF_name)
+		num_structures += 1
     
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths

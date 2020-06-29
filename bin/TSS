@@ -9,5 +9,5 @@ inputs = result[0]
 buildLibraryInputs(inputs["library"])
 #Molecule builder goes here (input inputs, outputs xyz file(s)
 #Elaynas function goes here (input is xyz file, output is xyz file)
-#modredConformers(crest_conformers_file, inputs) #Ammons script goes here (input is xyz file with multiple molecules, output is multiple com files)
+modredCrest("crest_conformers.xyz", inputs)
 #buildCom(result[0], result[1], "TSS.com")
