@@ -14,8 +14,8 @@ def default():
 	while line:
 		if "spin" in line:
 			inputs["spin"] = line.split(':')[1]
-		elif "multiplicity" in line:
-			inputs["mult"] = line.split(':')[1]
+		elif "charge" in line:
+			inputs["charge"] = line.split(':')[1]
 		elif "basis" in line:
 			inputs["basis"] = line.split(':')[1]
 		elif "method" in line:
@@ -50,8 +50,8 @@ def parseInput(inputFile, inputs):
 		if "spin" in line:
 			inputs["spin"] = line.split(':')[1]
 		 #Required - Default in file
-		elif "multiplicity" in line:
-			inputs["mult"] = line.split(':')[1]
+		elif "charge" in line:
+			inputs["charge"] = line.split(':')[1]
 		 #Required - Default in file
 		elif "basis" in line:
 			inputs["basis"] = line.split(':')[1]
@@ -131,11 +131,11 @@ def buildCom(inputs, coords, f_name):
 	#if inputs["mult"] == "":
  	#	inputs["mult"] = 2
 	#
-	oF.write("opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + inputs["basis"].strip() + " integral = ultrafine")
+	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + inputs["basis"].strip() + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
-	oF.write(inputs["mult"].strip() + " " + inputs["spin"])
+	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
 		oF.write(coord)
 	oF.write("\n")
@@ -173,7 +173,8 @@ def buildLibraryInputs(lib_location):
 
 
 def modredCrest(crest_file, inputs):
-	iF = open(crest_file, 'r')
+	os.chdir("modred")
+	iF = open("../" + crest_file, 'r')
 	num_structures = 1
 	line = iF.readline()
 	while line:
@@ -189,7 +190,7 @@ def modredCrest(crest_file, inputs):
 		oF_name = "conf" + str(num_structures) + ".com"
 		buildCom(inputs, coords, oF_name)
 		num_structures += 1
-    
+	os.chdir("../")
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
@@ -198,7 +199,8 @@ def gaussianProcesses():
 	processes = []
 	args = sys.argv
 	allDone = False
-	for file in os.listdir(os.getcwd() + "/modred/"):
+	os.chdir("modred")
+	for file in os.listdir(os.getcwd()):
         	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
 	for com in commands:
         	processes.append(subprocess.Popen(com))
@@ -213,4 +215,6 @@ def gaussianProcesses():
                         	print("Process Done")
 	print("all done")
 
- 
+def makeDirectories():
+	os.mkdir("modred")
+	os.mkdir("gaussianTS") 

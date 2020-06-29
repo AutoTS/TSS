@@ -1,5 +1,5 @@
-multiplicity:0
-spin:0
+charge:0
+spin:1
 basis:6-31G(d,p)
 method:m06
 denfit:0
