@@ -6,7 +6,7 @@ inputs ={}
 defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
-buildLibraryInputs(inputs["library"])
+#buildLibraryInputs(inputs["library"])
 #Molecule builder goes here (input inputs, outputs xyz file(s)
 #Elaynas function goes here (input is xyz file, output is xyz file)
 modredCrest("crest_conformers.xyz", inputs)

@@ -193,25 +193,24 @@ def modredCrest(crest_file, inputs):
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
-
-commands = []
-processes = []
-args = sys.argv
-allDone = False
-for file in os.listdir(os.getcwd() + "/modred/"):
-        commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
-for com in commands:
-        processes.append(subprocess.Popen(com))
-while not allDone:
-        allDone = True
-        time.sleep(30)
-        for p in processes:
-                if p.poll() is None:
-                        allDone = False
-                        print("Process not done")
-                else:
-                        print("Process Done")
-
-print("all done")
+def gaussianProcesses:
+	commands = []
+	processes = []
+	args = sys.argv
+	allDone = False
+	for file in os.listdir(os.getcwd() + "/modred/"):
+        	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
+	for com in commands:
+        	processes.append(subprocess.Popen(com))
+	while not allDone:
+        	allDone = True
+        	time.sleep(30)
+        	for p in processes:
+                	if p.poll() is None:
+                        	allDone = False
+                        	print("Process not done")
+                	else:
+                        	print("Process Done")
+	print("all done")
 
  
