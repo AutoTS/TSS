@@ -193,7 +193,7 @@ def modredCrest(crest_file, inputs):
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
-def gaussianProcesses:
+def gaussianProcesses():
 	commands = []
 	processes = []
 	args = sys.argv
