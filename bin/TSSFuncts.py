@@ -197,24 +197,48 @@ def modredCrest(crest_file, inputs):
 def gaussianProcesses():
 	commands = []
 	processes = []
+	file_names = []
 	args = sys.argv
 	allDone = False
 	os.chdir("modred")
 	for file in os.listdir(os.getcwd()):
+        	file_names.append(str(file))
         	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
 	for com in commands:
         	processes.append(subprocess.Popen(com))
 	while not allDone:
         	allDone = True
         	time.sleep(30)
+        	i = 0
+        	drawStatus(file_names,processes)
         	for p in processes:
                 	if p.poll() is None:
                         	allDone = False
-                        	print("Process not done")
+				#Run Check to make sure it is still TS
                 	else:
-                        	print("Process Done")
+				#Check for negative frequency
+                        	yellow = 2
+				#coords = logtoxyz()
+                        	#buildcom(inputs, coords, f_name)
+                        	
+                        	#IF negative frequency run TS
+                	i += 1
 	print("all done")
 
 def makeDirectories():
 	os.mkdir("modred")
-	os.mkdir("gaussianTS") 
+	os.mkdir("gaussianTS")
+
+def drawStatus(file_names, processes):
+	os.system('clear')
+	i = 0
+	for p in processes:
+                        if p.poll() is None:
+                                allDone = False
+                                #Run Check to make sure it is still TS
+                                print(file_names[i] + "          ------> Running Modred\n\n")
+                        else:
+                                #Check for negative frequency
+                                #IF negative frequency run TS
+                                print(file_names[i] + "          ------> Done\n\n")
+                        i += 1 
