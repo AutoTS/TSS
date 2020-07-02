@@ -126,11 +126,8 @@ def parseChanges(line, option, inputs):
 
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
-	#need to error check and to check whether the input has the desired info or if the defaults are going to be used
-	#
-	#if inputs["mult"] == "":
- 	#	inputs["mult"] = 2
-	#
+	oF.write("%nprocshared=1\n")
+	oF.write("%mem=30GB\n")
 	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + inputs["basis"].strip() + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
