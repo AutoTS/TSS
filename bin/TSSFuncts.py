@@ -194,33 +194,42 @@ def modredCrest(crest_file, inputs):
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
-def gaussianProcesses():
+def gaussianProcesses(coords):
 	commands = []
+	switched = []
+	optType = []	
 	processes = []
 	file_names = []
 	args = sys.argv
 	allDone = False
 	os.chdir("modred")
 	for file in os.listdir(os.getcwd()):
-        	file_names.append(str(file))
+        	file_names.append(str(file.split('.')[0]))
         	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
+        	optType.append("modred")
+        	switched.append(0)
 	for com in commands:
         	processes.append(subprocess.Popen(com))
 	while not allDone:
         	allDone = True
-        	time.sleep(30)
+        	time.sleep(10)
         	i = 0
-        	drawStatus(file_names,processes)
+        	drawStatus(file_names,processes, optType, switched)
         	for p in processes:
                 	if p.poll() is None:
                         	allDone = False
 				#Run Check to make sure it is still TS
                 	else:
 				#Check for negative frequency
-                        	yellow = 2
 				#coords = logtoxyz()
-                        	#buildcom(inputs, coords, f_name)
-                        	
+                        	if (not switched[i]):
+                                	allDone = False
+                                	os.chdir('../gaussianTS/')
+                                	buildCom(inputs, coords, file_names[i] + ".com")
+                                	processes[i] = subprocess.Popen(['/apps/gaussian16/B.01/AVX2/g16/g16', (file_names[i] + ".com")])
+                                	optType[i] = "TS Calc"
+                                	os.chdir('../modred')
+                                	switched[i] = 1
                         	#IF negative frequency run TS
                 	i += 1
 	print("all done")
@@ -229,16 +238,18 @@ def makeDirectories():
 	os.mkdir("modred")
 	os.mkdir("gaussianTS")
 
-def drawStatus(file_names, processes):
+def drawStatus(file_names, processes, optType, switched):
 	os.system('clear')
 	i = 0
 	for p in processes:
                         if p.poll() is None:
                                 allDone = False
                                 #Run Check to make sure it is still TS
-                                print(file_names[i] + "          ------> Running Modred\n\n")
+                                print(file_names[i] + "          ------> Running " + optType[i] + "\n\n")
                         else:
-                                #Check for negative frequency
-                                #IF negative frequency run TS
-                                print(file_names[i] + "          ------> Done\n\n")
+                                #Check for negative frequencyi
+                        	if(not switched[i]):
+                                	print(file_names[i] + "          ------> Transitioning from modred to TS Calc\n\n")
+                        	else:
+                                	print(file_names[i] + "          ------> Done\n\n")
                         i += 1 

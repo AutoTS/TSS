@@ -3,15 +3,19 @@
 import os, sys
 from TSSFuncts import *
 inputs ={}
+print("Parsing Inputs and Defaults\n\n")
 defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
+coords = getCoords()
 #Molecule builder goes here (input inputs, outputs xyz file(s)
 #Elaynas function goes here (input is xyz file(s), output is crest_conformer.xyz file(s))
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
 modredCrest("crest_conformers.xyz", inputs) #takes in crest_conformers.xyz and makes modred gaussian inputs 
 inputs["opt"] = "(ts,noeigen,calcfc)"
-gaussianProcesses()  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
+
+print("Initializing Gaussian Runs for all conformations\n\n")
+gaussianProcesses(coords)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
 #Output the resulting log files and custom output file
 
 
