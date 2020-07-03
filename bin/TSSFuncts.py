@@ -2,7 +2,7 @@
 #small comment
 #Written By Taylor Nielson
 
-import sys, os, shutil, numpy as np, time, subprocess
+import sys, os, shutil, numpy as np, time, subprocess, re
 
 inputs = {}
 coords = []
@@ -191,8 +191,31 @@ def modredCrest(crest_file, inputs):
 		buildCom(inputs, coords, oF_name)
 		num_structures += 1
 	os.chdir("../")
+	iF.close()
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
+
+def logtoxyz(f_name):
+	inFile = open(f_name, 'r')
+	iF = inFile.readlines()
+	myLine = 0
+	for i, line in enumerate(iF):
+		if 'Standard orientation' in line:
+			myLine = i
+	coords = []
+	done = False
+	i = myLine + 5
+	myRegex = r'\s*\d*\s*(\d*)\s*\d*\s*(.*\s*.*\s*.*)'
+	while not done:
+		if '--' in iF[i]:
+			break
+		l = re.findall(myRegex, iF[i], flags=0)	
+		line = str(l[0][0]) + '\t' + str(l[0][1])
+		coords.append(line)
+		i += 1
+	inFile.close()
+	return coords
+	
 
 def gaussianProcesses():
 	commands = []
@@ -202,27 +225,26 @@ def gaussianProcesses():
 	allDone = False
 	os.chdir("modred")
 	for file in os.listdir(os.getcwd()):
-        	file_names.append(str(file))
-        	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
+		file_names.append(str(file))
+		commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
 	for com in commands:
-        	processes.append(subprocess.Popen(com))
+		processes.append(subprocess.Popen(com))
 	while not allDone:
-        	allDone = True
-        	time.sleep(30)
-        	i = 0
-        	drawStatus(file_names,processes)
-        	for p in processes:
-                	if p.poll() is None:
-                        	allDone = False
+		allDone = True
+		time.sleep(30)
+		i = 0
+		drawStatus(file_names,processes)
+		for p in processes:
+			if p.poll() is None:
+				allDone = False
 				#Run Check to make sure it is still TS
-                	else:
+			else:
 				#Check for negative frequency
-                        	yellow = 2
-				#coords = logtoxyz()
-                        	#buildcom(inputs, coords, f_name)
-                        	
-                        	#IF negative frequency run TS
-                	i += 1
+				yellow = 2
+				#IF negative frequency run TS
+				#coords = logtoxyz(file_names[i])
+				#buildCom(inputs, coords, "f_name")
+			i += 1
 	print("all done")
 
 def makeDirectories():
