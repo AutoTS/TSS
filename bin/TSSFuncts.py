@@ -2,7 +2,7 @@
 #small comment
 #Written By Taylor Nielson
 
-import sys, os, shutil, numpy as np, time, subprocess, re
+import sys, os, shutil, numpy as np, time, subprocess
 
 inputs = {}
 coords = []
@@ -126,11 +126,8 @@ def parseChanges(line, option, inputs):
 
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
-	#need to error check and to check whether the input has the desired info or if the defaults are going to be used
-	#
-	#if inputs["mult"] == "":
- 	#	inputs["mult"] = 2
-	#
+	oF.write("%nprocshared=1\n")
+	oF.write("%mem=30GB\n")
 	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + inputs["basis"].strip() + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
@@ -191,7 +188,6 @@ def modredCrest(crest_file, inputs):
 		buildCom(inputs, coords, oF_name)
 		num_structures += 1
 	os.chdir("../")
-	iF.close()
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
@@ -215,52 +211,63 @@ def logtoxyz(f_name):
 		i += 1
 	inFile.close()
 	return coords
-	
 
-def gaussianProcesses():
+def gaussianProcesses(coords):
 	commands = []
+	switched = []
+	optType = []	
 	processes = []
 	file_names = []
 	args = sys.argv
 	allDone = False
 	os.chdir("modred")
 	for file in os.listdir(os.getcwd()):
-		file_names.append(str(file))
-		commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
+        	file_names.append(str(file.split('.')[0]))
+        	commands.append(['/apps/gaussian16/B.01/AVX2/g16/g16', file])
+        	optType.append("modred")
+        	switched.append(0)
 	for com in commands:
-		processes.append(subprocess.Popen(com))
+        	processes.append(subprocess.Popen(com))
 	while not allDone:
-		allDone = True
-		time.sleep(30)
-		i = 0
-		drawStatus(file_names,processes)
-		for p in processes:
-			if p.poll() is None:
-				allDone = False
+        	allDone = True
+        	time.sleep(10)
+        	i = 0
+        	drawStatus(file_names,processes, optType, switched)
+        	for p in processes:
+                	if p.poll() is None:
+                        	allDone = False
 				#Run Check to make sure it is still TS
-			else:
+                	else:
 				#Check for negative frequency
-				yellow = 2
-				#IF negative frequency run TS
 				#coords = logtoxyz(file_names[i])
-				#buildCom(inputs, coords, "f_name")
-			i += 1
+                        	if (not switched[i]):
+                                	allDone = False
+                                	os.chdir('../gaussianTS/')
+                                	buildCom(inputs, coords, file_names[i] + ".com")
+                                	processes[i] = subprocess.Popen(['/apps/gaussian16/B.01/AVX2/g16/g16', (file_names[i] + ".com")])
+                                	optType[i] = "TS Calc"
+                                	os.chdir('../modred')
+                                	switched[i] = 1
+                        	#IF negative frequency run TS
+                	i += 1
 	print("all done")
 
 def makeDirectories():
 	os.mkdir("modred")
 	os.mkdir("gaussianTS")
 
-def drawStatus(file_names, processes):
+def drawStatus(file_names, processes, optType, switched):
 	os.system('clear')
 	i = 0
 	for p in processes:
                         if p.poll() is None:
                                 allDone = False
                                 #Run Check to make sure it is still TS
-                                print(file_names[i] + "          ------> Running Modred\n\n")
+                                print(file_names[i] + "          ------> Running " + optType[i] + "\n\n")
                         else:
-                                #Check for negative frequency
-                                #IF negative frequency run TS
-                                print(file_names[i] + "          ------> Done\n\n")
+                                #Check for negative frequencyi
+                        	if(not switched[i]):
+                                	print(file_names[i] + "          ------> Transitioning from modred to TS Calc\n\n")
+                        	else:
+                                	print(file_names[i] + "          ------> Done\n\n")
                         i += 1 

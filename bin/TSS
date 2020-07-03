@@ -3,15 +3,17 @@
 import os, sys
 from TSSFuncts import *
 inputs ={}
+print("Parsing Inputs and Defaults\n\n")
 defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
-#Molecule builder goes here (input inputs, outputs xyz file(s)
-#Elaynas function goes here (input is xyz file(s), output is crest_conformer.xyz file(s))
+coords = getCoords()
+#Build molecule (we will test the nitrogen switch)
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
-modredCrest("crest_conformers.xyz", inputs) #takes in crest_conformers.xyz and makes modred gaussian inputs 
+#We Will need to comment out modredCrest until we figure out the crest and just call buildcom using the coords from build molecule
 inputs["opt"] = "(ts,noeigen,calcfc)"
-gaussianProcesses()  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
+print("Initializing Gaussian Runs for all conformations\n\n")
+gaussianProcesses(coords)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
 #Output the resulting log files and custom output file
 
 
@@ -20,7 +22,6 @@ gaussianProcesses()  #Runs gaussian inputs and tracks whether they are done or n
 #1) Write the crest code and decide how to do constraints
 #2) Write function to create multiple modreds for each conformer
 #3) Write the function to check whether the gaussian file is still heading to a ts or if it needs to be killed
-#4) Write the function that runs TS when modred is done
 #5) Write the log to xyz function
 #6) Write custom output file
 #7) Tie Everything together so that we have a complete skeleton program
