@@ -276,29 +276,6 @@ def drawStatus(file_names, processes, optType, switched):
                         i += 1 
 
 
-
-def logtoxyz(f_name):
-         inFile = open(f_name, 'r')
-         iF = inFile.readlines()
-         myLine = 0
-         for i, line in enumerate(iF):
-         	if 'Standard orientation' in line:
-                	myLine = i
-         coords = []
-         done = False
-         i = myLine + 5
-         myRegex = r'\s*\d*\s*(\d*)\s*\d*\s*(.*\s*.*\s*.*)'
-         while not done:
-         	if '--' in iF[i]:
-                	break
-         	l = re.findall(myRegex, iF[i], flags=0)
-         	line = str(l[0][0]) + '\t' + str(l[0][1])
-         	coords.append(line)
-         	i += 1
-         inFile.close()
-         return coords
-
-
 def checkNegVib(inFile):
 	iF = open(inFile, "r")
 	line = iF.readline()
