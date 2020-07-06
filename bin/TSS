@@ -8,12 +8,14 @@ defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
 coords = getCoords()
-#Build molecule (we will test the nitrogen switch)
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
+#buildMolecule here
 #We Will need to comment out modredCrest until we figure out the crest and just call buildcom using the coords from build molecule
+
+modredCrest("crest_conformers.xyz",inputs)
 inputs["opt"] = "(ts,noeigen,calcfc)"
 print("Initializing Gaussian Runs for all conformations\n\n")
-gaussianProcesses(coords)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
+gaussianProcesses()  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
 #Output the resulting log files and custom output file
 
 
