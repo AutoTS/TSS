@@ -4,11 +4,9 @@
 
 import sys, os,re, shutil, numpy as np, time, subprocess
 
-inputs = {}
-coords = []
-
 #We need to add a crest_selectivity default
 def default():
+	inputs = {}
 	iF = open(os.path.expanduser("~/TSS/bin/.default"), "r")
 	line = iF.readline()
 	while line:
@@ -22,10 +20,8 @@ def default():
 			inputs["method"] = line.split(':')[1]
 		elif "batch" in line:
 			inputs["batch"] = line.split(':')[1]
-		elif "m-basis" in line:
-			inputs["m-basis"] = line.split(':')[1]
-		elif "m-method" in line:
-			inputs["m-method"] = line.split(':')[1]
+		elif "metal" in line:
+                	inputs["mbasis"] = line.split(':')[1]
 		elif "denfit" in line:
 			inputs["denfit"] = line.split(':')[1]
 		line = iF.readline()
@@ -68,11 +64,8 @@ def parseInput(inputFile, inputs):
 		elif "batch" in line:
 			inputs["batch"] = line.split(':')[1]
 		 #Required - Default in file
-		elif "m-basis" in line:
-			inputs["m-basis"] = line.split(':')[1]
-		 #Required - Default in file
-		elif "m-method" in line:
-			inputs["m-method"] = line.split(':')[1]	
+		elif "metal" in line:
+			inputs["mbasis"] = line.split(':')[1]
 		#Required, default not in file
 		elif "library" in line:
 			inputs["library"] = line.split(':')[1]
@@ -81,7 +74,11 @@ def parseInput(inputFile, inputs):
 			inputs["solvent_model"] = line.split(':')[1]
 		 #Required - Default in file
 		elif "denfit" in line:
-			inputs["denfit"] = line.split(':')[1]
+                	inputs["denfit"] = line.split(':')[1]
+		elif "memory" in line:
+			inputs["mem"] = line.split(':')[1]
+		elif "time" in line:
+			inputs["time"] = line.split(':')[1]
 		#Not Required
 		elif "subtract" in line:
 			parseChanges(line, "subtract", inputs)
@@ -97,11 +94,11 @@ def parseInput(inputFile, inputs):
 			inputs["leniency"] = line.split(':')[1]
 		line = iF.readline()
 	iF.close()
-	coords = getCoords()
+	coords = getCoords(inputs)
 	return inputs, coords
 
 
-def getCoords():
+def getCoords(inputs):
 	coords = []
 	iF = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
 	line = iF.readline()
@@ -127,19 +124,66 @@ def parseChanges(line, option, inputs):
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
-	oF.write("%mem=30GB\n")
-	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + inputs["basis"].strip() + " integral = ultrafine")
+	oF.write("%mem="+ str(int(inputs["mem"])-1) + "GB\n")
+	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
 	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
 		oF.write(coord)
+	writeFreezes(oF, coords, inputs)
 	oF.write("\n")
 	oF.write("\n")
 	oF.write("\n")
 	oF.write("\n")
 	oF.close()
+
+
+def writeFreezes(outFile,coords, inputs):
+	Freezes = []
+	libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
+	libFile.readline()
+	freeze_line = libFile.readline()
+	freeze_line = freeze_line[2:]
+	freeze_line = freeze_line.split(';')
+	freeze_line.pop(-1)
+	for i in range(0, len(freeze_line)):
+        	val = freeze_line[i].split('-')
+        	Freezes.append(val[0])
+        	Freezes.append(val[1])
+	outFile.write("\n")
+	for i in range(0,len(Freezes)-1,2):
+        	outFile.write("B " + str(int(Freezes[i]) + 1) + " " + str(int(Freezes[i+1]) + 1) + " F\n")
+	writeGenecp(libFile, outFile, coords, inputs)	
+
+def writeGenecp(libFile, outFile,coords, inputs):
+	metals, non_metals = getAtomTypes(coords)
+	outFile.write("\n")
+	for val in metals:
+        	outFile.write(val + " ")
+	outFile.write("0\n")
+	outFile.write(inputs["mbasis"].strip() + "\n****\n")
+	for val in non_metals:
+        	outFile.write(val + " ")
+	outFile.write("0\n" + inputs["basis"].strip() + "\n****\n\n")
+	for val in metals:
+        	outFile.write(val + " ")
+	outFile.write("0\n")
+	outFile.write(inputs["mbasis"].strip())
+		
+
+def getAtomTypes(coords):
+	metals = set()
+	non_metals = set() 
+	for coord in coords:
+        	if "Fe" in coord.split()[0]:
+                	metals.add("Fe")
+        	else:
+                	non_metals.add(coord[0].strip())
+	return metals, non_metals
+	
+
 
 def buildInputs(library, library_location):
 	if library is True:
@@ -153,7 +197,7 @@ def buildInputs(library, library_location):
 def buildLibraryInputs(lib_location):
 	shutil.copy(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "temp.xyz")
 	tempF = open("temp.xyz", "r")
-	finalF = open("out.xyz", "w")
+	finalF = open("crest_conformers.xyz", "w")
 	atomNumber = int(tempF.readline())
 	atomNumber -= len(inputs["subtract"])
 	#need to include adding and substituting
@@ -212,7 +256,7 @@ def logtoxyz(f_name):
 	inFile.close()
 	return coords
 
-def gaussianProcesses(coords):
+def gaussianProcesses():
 	commands = []
 	switched = []
 	optType = []	
@@ -246,7 +290,7 @@ def gaussianProcesses(coords):
                                         	buildCom(inputs, coords, file_names[i] + ".com")
                                         	processes[i] = subprocess.Popen(['/apps/gaussian16/B.01/AVX2/g16/g16', (file_names[i] + ".com")])
                                         	optType[i] = "TS Calc"
-                                        	os.chdir('../modred')
+                                       		os.chdir('../modred')
                                         	switched[i] = 1
                                 	else:
                                         	optType[i] = "killed"
@@ -259,22 +303,24 @@ def makeDirectories():
 	os.mkdir("gaussianTS")
 
 def drawStatus(file_names, processes, optType, switched):
-	os.system('clear')
+	os.chdir('../')
+	statusFile = open(".status", "w")
 	i = 0
 	for p in processes:
                         if p.poll() is None:
-                                print(file_names[i] + "          ------> Running " + optType[i] + "\n\n")
+                                statusFile.write(file_names[i] + "          ------> Running " + optType[i] + "\n\n")
                         else:
                                 #Check for negative frequencyi
                         	if(not switched[i]):
                                 	if optType[i] is "killed":
-                                        	print(file_names[i] + "          ------> Killed - No Negative Vibration at end of Modred\n\n")
+                                        	statusFile.write(file_names[i] + "          ------> Killed - No Negative Vibration at end of Modred\n\n")
                                 	else:
-                                        	print(file_names[i] + "          ------> Transitioning from modred to TS Calc\n\n")
+                                        	statusFile.write(file_names[i] + "          ------> Transitioning from modred to TS Calc\n\n")
                         	else:
-                                	print(file_names[i] + "          ------> Done\n\n")
+                                	statusFile(file_names[i] + "          ------> Done\n\n")
                         i += 1 
-
+	statusFile.close()
+	os.chdir('modred')
 
 def checkNegVib(inFile):
 	iF = open(inFile, "r")
@@ -285,3 +331,6 @@ def checkNegVib(inFile):
                 	return Freq < 0
         	line = iF.readline()
 	return False	
+
+
+

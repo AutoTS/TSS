@@ -7,23 +7,12 @@ print("Parsing Inputs and Defaults\n\n")
 defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
-coords = getCoords()
+coords = getCoords(inputs)
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
-#buildMolecule here
-#We Will need to comment out modredCrest until we figure out the crest and just call buildcom using the coords from build molecule
-
 modredCrest("crest_conformers.xyz",inputs)
 inputs["opt"] = "(ts,noeigen,calcfc)"
 print("Initializing Gaussian Runs for all conformations\n\n")
 gaussianProcesses()  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
-#Output the resulting log files and custom output file
 
 
 
-#TODO: 
-#1) Write the crest code and decide how to do constraints
-#2) Write function to create multiple modreds for each conformer
-#3) Write the function to check whether the gaussian file is still heading to a ts or if it needs to be killed
-#5) Write the log to xyz function
-#6) Write custom output file
-#7) Tie Everything together so that we have a complete skeleton program

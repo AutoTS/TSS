@@ -3,6 +3,5 @@ spin:1
 basis:6-31G(d,p)
 method:m06
 denfit:0
-m-method:Landl2z
-m-basis:Landl2z
+metal:LANL2DZ
 crest_selectivity: 6
