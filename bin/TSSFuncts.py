@@ -328,7 +328,8 @@ def checkNegVib(inFile):
 	while line:
         	if "Frequencies --" in line:
                 	Freq = float(line.split()[2])
-                	return Freq < 0
+                	if Freq < 0:
+                        	return float(line.split() [3]) > 0
         	line = iF.readline()
 	return False	
 
