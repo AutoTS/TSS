@@ -274,7 +274,7 @@ def gaussianProcesses():
         	processes.append(subprocess.Popen(com))
 	while not allDone:
         	allDone = True
-        	time.sleep(10)
+        	time.sleep(30)
         	i = 0
         	drawStatus(file_names,processes, optType, switched)
         	for p in processes:
@@ -304,7 +304,7 @@ def makeDirectories():
 
 def drawStatus(file_names, processes, optType, switched):
 	os.chdir('../')
-	statusFile = open(".status", "w")
+	statusFile = open("status", "w")
 	i = 0
 	for p in processes:
                         if p.poll() is None:
