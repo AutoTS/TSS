@@ -77,6 +77,8 @@ def parseInput(inputFile, inputs):
                 	inputs["denfit"] = line.split(':')[1]
 		elif "memory" in line:
 			inputs["mem"] = line.split(':')[1]
+		elif "memper" in line:
+			inputs["memper"] = line.split(':')[1]
 		elif "time" in line:
 			inputs["time"] = line.split(':')[1]
 		#Not Required
@@ -124,7 +126,7 @@ def parseChanges(line, option, inputs):
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
-	oF.write("%mem="+ str(int(inputs["mem"])-1) + "GB\n")
+	oF.write("%mem="+ str(int(inputs["memper"])) + "GB\n")
 	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
@@ -256,7 +258,7 @@ def logtoxyz(f_name):
 	inFile.close()
 	return coords
 
-def gaussianProcesses():
+def gaussianProcesses(inputs):
 	commands = []
 	switched = []
 	optType = []	
