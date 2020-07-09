@@ -134,7 +134,8 @@ def buildCom(inputs, coords, f_name):
 	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
 		oF.write(coord)
-	writeFreezes(oF, coords, inputs)
+	if inputs["opt"] is "modred"
+		writeFreezes(oF, coords, inputs)
 	oF.write("\n")
 	oF.write("\n")
 	oF.write("\n")
