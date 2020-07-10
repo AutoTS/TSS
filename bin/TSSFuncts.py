@@ -134,8 +134,7 @@ def buildCom(inputs, coords, f_name):
 	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
 		oF.write(coord)
-	if inputs["opt"] is "modred":
-		writeFreezes(oF, coords, inputs)
+	writeFreezes(oF, coords, inputs)
 	oF.write("\n")
 	oF.write("\n")
 	oF.write("\n")
@@ -151,11 +150,12 @@ def writeFreezes(outFile,coords, inputs):
 	freeze_line = freeze_line[2:]
 	freeze_line = freeze_line.split(';')
 	freeze_line.pop(-1)
-	for i in range(0, len(freeze_line)):
-        	val = freeze_line[i].split('-')
-        	Freezes.append(val[0])
-        	Freezes.append(val[1])
-	outFile.write("\n")
+	if "modred" in inputs["opt"]:
+        	for i in range(0, len(freeze_line)):
+                	val = freeze_line[i].split('-')
+                	Freezes.append(val[0])
+                	Freezes.append(val[1])
+        	outFile.write("\n")
 	for i in range(0,len(Freezes)-1,2):
         	outFile.write("B " + str(int(Freezes[i]) + 1) + " " + str(int(Freezes[i+1]) + 1) + " F\n")
 	writeGenecp(libFile, outFile, coords, inputs)	
