@@ -277,7 +277,7 @@ def gaussianProcesses(inputs):
         	processes.append(subprocess.Popen(com))
 	while not allDone:
         	allDone = True
-        	time.sleep(30)
+        	time.sleep(300)
         	i = 0
         	drawStatus(file_names,processes, optType, switched)
         	for p in processes:
