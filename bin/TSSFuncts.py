@@ -4,6 +4,11 @@
 
 import sys, os,re, shutil, numpy as np, time, subprocess
 
+metals_lib = {"26":"Fe"}
+non_metals_lib = {"7":"N","15":"P","1":"H","6":"C"}
+
+
+
 #We need to add a crest_selectivity default
 def default():
 	inputs = {}
@@ -133,7 +138,18 @@ def buildCom(inputs, coords, f_name):
 	oF.write("\n\n")
 	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
-		oF.write(coord)
+        	if coord[0].isalpha():
+                        oF.write(coord)
+        	else:
+        		coord = coord.split()
+        		if coord[0] in metals_lib:
+        			string = " "
+        			coord[0] = metals_lib[str(coord[0])]
+        			oF.write(string.join(coord)+ "\n")
+        		else:
+        			string = " "
+        			coord[0] = non_metals_lib[str(coord[0])]
+        			oF.write(string.join(coord)+ "\n")
 	writeFreezes(oF, coords, inputs)
 	oF.write("\n")
 	oF.write("\n")
@@ -180,10 +196,13 @@ def getAtomTypes(coords):
 	metals = set()
 	non_metals = set() 
 	for coord in coords:
-        	if "Fe" in coord.split()[0]:
+        	if "fe" in coord.split()[0].lower() or "26" in coord.split()[0]:
                 	metals.add("Fe")
         	else:
-                	non_metals.add(coord[0].strip())
+                	if coord[0].strip().isalpha():
+                        	non_metals.add(coord[0].strip())
+                	else:
+                        	non_metals.add(non_metals_lib[str(coord[0].strip())])
 	return metals, non_metals
 	
 
@@ -257,6 +276,7 @@ def logtoxyz(f_name):
 		coords.append(line)
 		i += 1
 	inFile.close()
+	z = 0
 	return coords
 
 def gaussianProcesses(inputs):
@@ -299,11 +319,16 @@ def gaussianProcesses(inputs):
                                         	optType[i] = "killed"
                 	i += 1
 	drawStatus(file_names,processes, optType, switched)
+	os.chdir("../gaussianTS")
+	for name in file_names:
+        	CheckPassFail(name + ".log")
 	print("all done")
 
 def makeDirectories():
 	os.mkdir("modred")
 	os.mkdir("gaussianTS")
+	os.mkdir("crest")
+	os.mkdir("completed")
 
 def drawStatus(file_names, processes, optType, switched):
 	os.chdir('../')
@@ -320,7 +345,7 @@ def drawStatus(file_names, processes, optType, switched):
                                 	else:
                                         	statusFile.write(file_names[i] + "          ------> Transitioning from modred to TS Calc\n\n")
                         	else:
-                                	statusFile(file_names[i] + "          ------> Done\n\n")
+                                	statusFile.write(file_names[i] + "          ------> Done\n\n")
                         i += 1 
 	statusFile.close()
 	os.chdir('modred')
@@ -334,7 +359,53 @@ def checkNegVib(inFile):
                 	if Freq < 0:
                         	return float(line.split() [3]) > 0
         	line = iF.readline()
+	iF.close()
 	return False	
+def checkCompleted(inFile):
+	iF = open(inFile, "r")
+	for line in iF:
+		pass
+	last_line = line
+	iF.close()
+	if "Normal termination" in last_line:
+		return true
+	return false
+	
+
+def CheckPassFail(inputFile):
+	pass1 = checkNegVib(inputFile)
+	if pass1:
+		pass2 = checkCompleted(inputFile)
+		if pass2:
+			copyfile(inputFile, "../completed/" + inputFile)
 
 
 
+def outputFunc(f_name):
+	thval = ""
+	iF = open(f_name, 'r')
+	line = iF.readline()
+	while line:
+		if "Zero-point correction" in line:
+			no_of_lines = 7
+			lines = line
+			for i in range(no_of_lines):
+				lines+=iF.readline()
+			thval = lines
+		line = iF.readline()
+	iF.close()
+	return thval
+        
+
+def finalOutput():
+	os.chdir("../completed")
+	divider = "-" * 50 + '\n'
+	results = []
+	oF = open("autots.out", 'w')
+	oF.write("\nAuto TS Output File\n")
+	for file in os.listdir("."):
+		results.append(outputFunc(file))
+	for result in results:
+		oF.write(divider)
+		oF.write(result)
+	oF.close()

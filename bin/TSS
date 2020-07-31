@@ -12,7 +12,7 @@ makeDirectories() #This currently makes modred and gaussianTS directories which 
 modredCrest("crest_conformers.xyz",inputs)
 inputs["opt"] = "(ts,noeigen,calcfc)"
 print("Initializing Gaussian Runs for all conformations\n\n")
-gaussianProcesses(inputs)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
-
+gaussianProcesses(inputs)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS sea
+finalOutput()
 
 
