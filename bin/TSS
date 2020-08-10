@@ -7,8 +7,10 @@ print("Parsing Inputs and Defaults\n\n")
 defaultresults = default()
 result = parseInput(sys.argv[1], defaultresults)
 inputs = result[0]
+print(inputs)
 coords = getCoords(inputs)
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
+runCrest("inp.xyz", inputs["leniency"])
 modredCrest("crest_conformers.xyz",inputs)
 inputs["opt"] = "(ts,noeigen,calcfc)"
 print("Initializing Gaussian Runs for all conformations\n\n")

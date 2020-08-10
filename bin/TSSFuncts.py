@@ -97,7 +97,7 @@ def parseInput(inputFile, inputs):
 			parseChanges(line, "add", inputs)
 		elif "difficulty" in line:
 			inputs["difficulty"] = line.split(':')[1]
-		elif "conformation_leniency" in line:
+		elif "conformational_leniency" in line:
 			inputs["leniency"] = line.split(':')[1]
 		line = iF.readline()
 	iF.close()
@@ -131,15 +131,16 @@ def parseChanges(line, option, inputs):
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
-	oF.write("%mem="+ str(int(inputs["memper"])) + "GB\n")
+	oF.write("%mem="+ str(int(inputs["memper"])//int(inputs["numconfs"])) + "GB\n")
 	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral = ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
 	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
 	for coord in coords:
+        	coord = coord.strip()
         	if coord[0].isalpha():
-                        oF.write(coord)
+                        oF.write(coord + "\n")
         	else:
         		coord = coord.split()
         		if coord[0] in metals_lib:
@@ -196,13 +197,14 @@ def getAtomTypes(coords):
 	metals = set()
 	non_metals = set() 
 	for coord in coords:
+        	coord = coord.strip()
         	if "fe" in coord.split()[0].lower() or "26" in coord.split()[0]:
                 	metals.add("Fe")
         	else:
-                	if coord[0].strip().isalpha():
-                        	non_metals.add(coord[0].strip())
+                	if coord[0].isalpha():
+                        	non_metals.add(coord[0])
                 	else:
-                        	non_metals.add(non_metals_lib[str(coord[0].strip())])
+                        	non_metals.add(non_metals_lib[str(coord[0])])
 	return metals, non_metals
 	
 
@@ -237,8 +239,10 @@ def buildLibraryInputs(lib_location):
 
 def modredCrest(crest_file, inputs):
 	os.chdir("modred")
+	coords_list = []
+	names_list = []
 	iF = open("../" + crest_file, 'r')
-	num_structures = 1
+	num_structures = 0
 	line = iF.readline()
 	while line:
 		line = iF.readline()
@@ -250,9 +254,12 @@ def modredCrest(crest_file, inputs):
 				line = iF.readline()
 			else:
 				break
-		oF_name = "conf" + str(num_structures) + ".com"
-		buildCom(inputs, coords, oF_name)
-		num_structures += 1
+		coords_list.append(coords)
+		names_list.append("conf" + str(num_structures) + ".com")
+		num_structures +=1
+	inputs["numconfs"] = num_structures
+	for i in range(0,len(coords_list)):
+		buildCom(inputs, coords_list[i], names_list[i])
 	os.chdir("../")
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
@@ -299,7 +306,7 @@ def gaussianProcesses(inputs):
         	allDone = True
         	time.sleep(300)
         	i = 0
-        	drawStatus(file_names,processes, optType, switched)
+        	drawStatus(file_names, processes, optType, switched)
         	for p in processes:
                 	if p.poll() is None:
                         	allDone = False
@@ -318,7 +325,7 @@ def gaussianProcesses(inputs):
                                 	else:
                                         	optType[i] = "killed"
                 	i += 1
-	drawStatus(file_names,processes, optType, switched)
+	drawStatus(file_names, processes, optType, switched)
 	os.chdir("../gaussianTS")
 	for name in file_names:
         	CheckPassFail(name + ".log")
@@ -409,3 +416,30 @@ def finalOutput():
 		oF.write(divider)
 		oF.write(result)
 	oF.close()
+
+def runCrest(xyz_file, leniency):
+	coords = []
+	header = ''
+	bonds = []
+	with open(xyz_file, "r") as coord_file:
+		header = coord_file.readline()
+		bonds_line = coord_file.readline()[2:]
+		bond_strings = bonds_line.split(';')
+		bond_strings.pop()
+		for bond in bond_strings:
+			atoms = bond.split('-')
+			bonds.append([str(int(atoms[0]) + 1), str(int(atoms[1]) + 1)])
+		coords = coord_file.readlines()
+	os.chdir("crest")
+	with open("cinp", "w") as constraint_file:
+		constraint_file.write("$constrain\n")
+		for atoms in bonds:
+			constraint_file.write("\tdistance: " + atoms[0] + ", " + atoms[1] + ", auto\n")
+		constraint_file.write("$end\n")
+	with open("coords.xyz", "w") as crest_coords:
+		crest_coords.write(header + '\n')
+		crest_coords.writelines(coords)
+	run_crest = subprocess.Popen([os.path.expanduser("~/crest"), "coords.xyz", "-cinp", "cinp", "-ewin", leniency])
+	run_crest.wait()##				    ^^^ replace later with global path to crest.exe
+	shutil.copy("crest_conformers.xyz", "../crest_conformers.xyz")
+	os.chdir("../")
