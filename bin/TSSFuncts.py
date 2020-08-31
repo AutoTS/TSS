@@ -132,7 +132,7 @@ def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
 	oF.write("%mem="+ str(int(inputs["memper"])//int(inputs["numconfs"])) + "GB\n")
-	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral = ultrafine")
+	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral=ultrafine")
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
@@ -238,14 +238,17 @@ def buildLibraryInputs(lib_location):
 
 
 def modredCrest(crest_file, inputs):
+	energies = []
+	acceptable_energy = True
 	os.chdir("modred")
 	coords_list = []
 	names_list = []
-	iF = open("../" + crest_file, 'r')
 	num_structures = 0
+	iF = open("../"+crest_file,"r")
 	line = iF.readline()
 	while line:
 		line = iF.readline()
+		energies.append(float(line)*627.51)
 		line = iF.readline()
 		coords = []
 		while line:
@@ -254,9 +257,16 @@ def modredCrest(crest_file, inputs):
 				line = iF.readline()
 			else:
 				break
-		coords_list.append(coords)
-		names_list.append("conf" + str(num_structures) + ".com")
-		num_structures +=1
+		#for i in range(0,len(energies)-1):
+		#	if energies[-1] -energies[i] < 0.10:
+		#		acceptable_energy = False
+		#		energies.pop()
+		#		break
+		if acceptable_energy:
+			coords_list.append(coords)
+			names_list.append("conf" + str(num_structures) + ".com")
+			num_structures +=1
+		acceptable_energy = True
 	inputs["numconfs"] = num_structures
 	for i in range(0,len(coords_list)):
 		buildCom(inputs, coords_list[i], names_list[i])
@@ -318,6 +328,7 @@ def gaussianProcesses(inputs):
                                         	coords = logtoxyz(file_names[i] + ".log")
                                         	os.chdir('../gaussianTS/')
                                         	buildCom(inputs, coords, file_names[i] + ".com")
+                                        	inputs["numconfs"] = findAliveProcesses(processes)
                                         	processes[i] = subprocess.Popen(['/apps/gaussian16/B.01/AVX2/g16/g16', (file_names[i] + ".com")])
                                         	optType[i] = "TS Calc"
                                        		os.chdir('../modred')
@@ -327,9 +338,19 @@ def gaussianProcesses(inputs):
                 	i += 1
 	drawStatus(file_names, processes, optType, switched)
 	os.chdir("../gaussianTS")
-	for name in file_names:
-        	CheckPassFail(name + ".log")
+	files = [f for f in os.listdir('.') if f.split('.')[1] is "log"]
+	for f in files:
+        	CheckPassFail(f)
 	print("all done")
+
+def findAliveProcesses(processes):
+	num = 0
+	for p in processes:
+		if p.poll() is None:
+			num +=1
+	if num == 1:
+		return 2
+	return num
 
 def makeDirectories():
 	os.mkdir("modred")
@@ -417,15 +438,17 @@ def finalOutput():
 		oF.write(result)
 	oF.close()
 
-def runCrest(xyz_file, leniency):
+def runCrest(xyz_file, leniency, inputs):
 	coords = []
 	header = ''
 	bonds = []
+	libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
+	libFile.readline()
+	bonds_line = libFile.readline()[2:]
+	bond_strings = bonds_line.split(';')
+	bond_strings.pop()
 	with open(xyz_file, "r") as coord_file:
 		header = coord_file.readline()
-		bonds_line = coord_file.readline()[2:]
-		bond_strings = bonds_line.split(';')
-		bond_strings.pop()
 		for bond in bond_strings:
 			atoms = bond.split('-')
 			bonds.append([str(int(atoms[0]) + 1), str(int(atoms[1]) + 1)])
@@ -437,7 +460,7 @@ def runCrest(xyz_file, leniency):
 			constraint_file.write("\tdistance: " + atoms[0] + ", " + atoms[1] + ", auto\n")
 		constraint_file.write("$end\n")
 	with open("coords.xyz", "w") as crest_coords:
-		crest_coords.write(header + '\n')
+		crest_coords.write(header)
 		crest_coords.writelines(coords)
 	run_crest = subprocess.Popen([os.path.expanduser("~/crest"), "coords.xyz", "-cinp", "cinp", "-ewin", leniency])
 	run_crest.wait()##				    ^^^ replace later with global path to crest.exe

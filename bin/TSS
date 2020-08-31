@@ -10,7 +10,7 @@ inputs = result[0]
 print(inputs)
 coords = getCoords(inputs)
 makeDirectories() #This currently makes modred and gaussianTS directories which will hold gaussian calculations
-runCrest("inp.xyz", inputs["leniency"])
+runCrest("inp.xyz", inputs["leniency"], inputs)
 modredCrest("crest_conformers.xyz",inputs)
 inputs["opt"] = "(ts,noeigen,calcfc)"
 print("Initializing Gaussian Runs for all conformations\n\n")
