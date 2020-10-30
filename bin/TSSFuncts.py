@@ -4,8 +4,8 @@
 
 import sys, os,re, shutil, numpy as np, time, subprocess
 
-metals_lib = {"26":"Fe"}
-non_metals_lib = {"7":"N","15":"P","1":"H","6":"C"}
+metals_lib = {"26":"FE","51":"SB","75":"RE","3":"LI","4":"BE","11":"NA","12":"MG"}
+non_metals_lib = {"7":"N","15":"P","1":"H","6":"C","16":"S","8":"O","9":"F","10":"NE","17":"CL","18":"AR","34":"SE","35":"BR","36":"KR","53":"I","54":"XE","86":"RN"}
 
 
 
@@ -36,7 +36,7 @@ def default():
 
 
 #Need to include a crest_selectivity parameter
-def parseInput(inputFile, inputs):
+def parseInput(inputFile, inputs,xyz_file):
 	name = inputFile.split('.')[0]
 	extension = inputFile.split('.')[1]
 	if extension == "in":
@@ -48,13 +48,13 @@ def parseInput(inputFile, inputs):
 	line = iF.readline()
 	while line:
 		#Required - Default in file
-		if "spin" in line:
-			inputs["spin"] = line.split(':')[1]
+	#	if "spin" in line:
+	#		inputs["spin"] = line.split(':')[1]
 		 #Required - Default in file
-		elif "charge" in line:
-			inputs["charge"] = line.split(':')[1]
+	#	elif "charge" in line:
+	#		inputs["charge"] = line.split(':')[1]
 		 #Required - Default in file
-		elif "basis" in line:
+		if "basis" in line:
 			inputs["basis"] = line.split(':')[1]
 		 #Required - Default in file
 		elif "method" in line:
@@ -66,14 +66,14 @@ def parseInput(inputFile, inputs):
 		elif "solvent" in line:
 			inputs["solvent"] = line.split(':')[1]
 		 #Required - Default in file
-		elif "batch" in line:
-			inputs["batch"] = line.split(':')[1]
+#		elif "batch" in line:
+#			inputs["batch"] = line.split(':')[1]
 		 #Required - Default in file
 		elif "metal" in line:
 			inputs["mbasis"] = line.split(':')[1]
 		#Required, default not in file
-		elif "library" in line:
-			inputs["library"] = line.split(':')[1]
+#		elif "library" in line:
+#			inputs["library"] = line.split(':')[1]
 		#Not Required, Gaussian Defaults to gas
 		elif "solvent_model" in line:
 			inputs["solvent_model"] = line.split(':')[1]
@@ -84,50 +84,41 @@ def parseInput(inputFile, inputs):
 			inputs["mem"] = line.split(':')[1]
 		elif "memper" in line:
 			inputs["memper"] = line.split(':')[1]
-		elif "time" in line:
-			inputs["time"] = line.split(':')[1]
-		#Not Required
-		elif "subtract" in line:
-			parseChanges(line, "subtract", inputs)
-		#Not Required
-		elif "substitute" in line:
-			parseChanges(line, "substitute", inputs)
-		#Not Required
-		elif "add" in line:
-			parseChanges(line, "add", inputs)
+#		elif "time" in line:
+#			inputs["time"] = line.split(':')[1]
+#		#Not Required
+#		elif "subtract" in line:
+#			parseChanges(line, "subtract", inputs)
+#		#Not Required
+#		elif "substitute" in line:
+#			parseChanges(line, "substitute", inputs)
+#		#Not Required
+#		elif "add" in line:
+#			parseChanges(line, "add", inputs)
 		elif "difficulty" in line:
 			inputs["difficulty"] = line.split(':')[1]
 		elif "conformational_leniency" in line:
 			inputs["leniency"] = line.split(':')[1]
 		line = iF.readline()
 	iF.close()
-	coords = getCoords(inputs)
-	return inputs, coords
+	#coords = getCoords(inputs,xyz_file)
+	return inputs# coords
 
 
-def getCoords(inputs):
+def getCoords(inputs,xyz_file):
 	coords = []
-	iF = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
+	#iF = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
+	iF = open(xyz_file,"r")
 	line = iF.readline()
 	line = iF.readline()
+	parseFreezes(line)
 	line = iF.readline()
 	while line:
 		coords.append(line)
 		line = iF.readline()
 	return coords
-
-def parseChanges(line, option, inputs):
-	split_line = line.split(':')[1]
-	split_line = split_line[1:-2]
-	split_again = split_line.split(',')
-	if option == "subtract":
-		inputs["subtract"] = [val for val in split_again]
-	elif option == "substitute":
-		inputs["substitute"] = [val for val in split_again]
-	elif option == "add":
-		inputs["add"] = [val for val in split_again]
-
-
+	
+		
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
@@ -136,7 +127,7 @@ def buildCom(inputs, coords, f_name):
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
-	oF.write(inputs["charge"].strip() + " " + inputs["spin"])
+	oF.write(inputs["charge"].strip() + " " + inputs["spin"] + "\n")
 	for coord in coords:
         	coord = coord.strip()
         	if coord[0].isalpha():
@@ -160,26 +151,31 @@ def buildCom(inputs, coords, f_name):
 
 
 def writeFreezes(outFile,coords, inputs):
-	Freezes = []
-	libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
-	libFile.readline()
-	freeze_line = libFile.readline()
-	freeze_line = freeze_line[2:]
-	freeze_line = freeze_line.split(';')
-	freeze_line.pop(-1)
-	if "modred" in inputs["opt"]:
-        	for i in range(0, len(freeze_line)):
-                	val = freeze_line[i].split('-')
-                	Freezes.append(val[0])
-                	Freezes.append(val[1])
-        	outFile.write("\n")
-	for i in range(0,len(Freezes)-1,2):
-        	outFile.write("B " + str(int(Freezes[i]) + 1) + " " + str(int(Freezes[i+1]) + 1) + " F\n")
-	writeGenecp(libFile, outFile, coords, inputs)	
-
-def writeGenecp(libFile, outFile,coords, inputs):
-	metals, non_metals = getAtomTypes(coords)
+	#Freezes = []
+	#libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
+	#libFile.readline()
+	#freeze_line = libFile.readline()
+	#freeze_line = freeze_line[2:]
+	#freeze_line = freeze_line.split(';')
+	#freeze_line.pop(-1)
+	#if "modred" in inputs["opt"]:
+        #	for i in range(0, len(freeze_line)):
+        #        	val = freeze_line[i].split('-')
+        #        	Freezes.append(val[0])
+        #        	Freezes.append(val[1])
+        #	outFile.write("\n")
+	#for i in range(0,len(Freezes)-1,2):
+        #	outFile.write("B " + str(int(Freezes[i]) + 1) + " " + str(int(Freezes[i+1]) + 1) + " F\n")
 	outFile.write("\n")
+	if "modred" in inputs["opt"]:
+		for bond in inputs["bonds"]:
+			outFile.write("B " + str(bond[0]) + " " + str(bond[1]) + " F\n")
+	writeGenecp(outFile, coords, inputs)	
+
+def writeGenecp(outFile,coords, inputs):
+	metals, non_metals = getAtomTypes(coords)
+	if "modred" in inputs["opt"]:
+        	outFile.write("\n")
 	for val in metals:
         	outFile.write(val + " ")
 	outFile.write("0\n")
@@ -198,23 +194,17 @@ def getAtomTypes(coords):
 	non_metals = set() 
 	for coord in coords:
         	coord = coord.strip()
-        	if "fe" in coord.split()[0].lower() or "26" in coord.split()[0]:
-                	metals.add("Fe")
+        	if coord.split()[0].upper() in metals_lib.values():
+                	metals.add(coord.split()[0])
+        	elif coord.split()[0] in metals_lib:
+                        metals.add(metals_lib[str(coord.split()[0])])
         	else:
                 	if coord[0].isalpha():
                         	non_metals.add(coord[0])
                 	else:
-                        	non_metals.add(non_metals_lib[str(coord[0])])
+                        	non_metals.add(non_metals_lib[str(coord.split()[0])])
 	return metals, non_metals
 	
-
-
-def buildInputs(library, library_location):
-	if library is True:
-		buildLibraryInputs(library_location)
-	else:
-		buildGuessedInputs()
-
 
 #Copies the base_input as defined in the input file and modifies it to build a new xyz file
 #Currently only does subractions
@@ -442,17 +432,27 @@ def runCrest(xyz_file, leniency, inputs):
 	coords = []
 	header = ''
 	bonds = []
-	libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
-	libFile.readline()
+	libFile = open(xyz_file, "r")
+	header = libFile.readline()
 	bonds_line = libFile.readline()[2:]
 	bond_strings = bonds_line.split(';')
 	bond_strings.pop()
-	with open(xyz_file, "r") as coord_file:
-		header = coord_file.readline()
+	charge_multiplicity = bond_strings.pop()
+	charge_multiplicity = charge_multiplicity[2:]
+	charge_multiplicity = charge_multiplicity.split(',')
+	inputs["charge"]=charge_multiplicity[0]
+	inputs["spin"]=charge_multiplicity[1]
+	#with open(xyz_file, "r") as coorid_file:
+	header += "\n"
+	bond_strings = bond_strings[0].split(',')
+	if bond_strings[0] == '':
+		peanut = 5
+	else:
 		for bond in bond_strings:
 			atoms = bond.split('-')
 			bonds.append([str(int(atoms[0]) + 1), str(int(atoms[1]) + 1)])
-		coords = coord_file.readlines()
+	coords = libFile.readlines()
+	inputs["bonds"] = bonds
 	os.chdir("crest")
 	with open("cinp", "w") as constraint_file:
 		constraint_file.write("$constrain\n")
@@ -466,3 +466,14 @@ def runCrest(xyz_file, leniency, inputs):
 	run_crest.wait()##				    ^^^ replace later with global path to crest.exe
 	shutil.copy("crest_conformers.xyz", "../crest_conformers.xyz")
 	os.chdir("../")
+	tempFile = open("crest_conformers.xyz","a")
+	origFile = open(xyz_file,"r")
+	line = origFile.readline()
+	while line:
+		if "F:" in line:
+			tempFile.write("0\n")
+		else:
+			tempFile.write(line)
+		line = origFile.readline()
+	tempFile.close()
+	origFile.close()
