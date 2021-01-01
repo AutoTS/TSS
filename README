@@ -1,21 +1,5 @@
-Transition State Search is a program that allows you to autonomously create transition states
+T.A.Y.L.O.R (Transition-State Automation Yields Lots Of Results) is a program that allows you to autonomously create transition states
 
 Currently in Test there is an example input file that can be run.
 
 Thank you for using our program!
-
-
-
-
-
-_______________________         _____________       ______________
-|                     |         |           |      |             |
-|                     |         |     ______|      |     ________|   
-|                     |         |    |             |    |                     
---------|     |--------         |    |______       |    |________                         
-        |     |                 |           |      |             |     
-        |     |                 |________   |      |_________    |                  
-        |     |                         |   |               |    |              
-        |     |                 ________|   |       ________|    |          
-        |     |                 |           |      |             |
-	|_____|		        |___________|      |_____________|                
