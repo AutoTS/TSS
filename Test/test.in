@@ -1,10 +1,7 @@
-library:smalliron.xyz
-spin:3
-charge:1
-basis:6-31G(d,p)
-method:UM06L
-memper:10
-difficulty:20
+basis:Def2SVP
+method:PBE1PBE
+memper:80
+metal:Def2SVP
 conformational_leniency:3
-batch:no
-substitute:[17 = N]
+confs:1
+extra:em=gd3
