@@ -1,17 +1,25 @@
 #!/bin/env python3
-#!/bin/env python3
 
 import os, sys
+#Imports the functions from TSSFuncts
 from TSSFuncts import *
-inputs ={}
 
+
+inputs ={}
 print("Parsing Inputs and Defaults\n\n")
+#Sets Defaults for the Gaussian Program from the defaults file
 defaultresults = default()
+#Overrides any of the defaults that are specified in the input file
 inputs = parseInput(sys.argv[1], defaultresults, sys.argv[2])
+#makes directories(crest, modred, gaussianTS, completed)
 makeDirectories()
+#runs crest on original xyz to find conformers
 runCrest(sys.argv[2], inputs["leniency"], inputs)
+#makes modred files from crest conformers and puts them in the modred folder
 modredCrest("crest_conformers.xyz",inputs)
-inputs["opt"] = "(ts,noeigen,calcfc)"
+#inputs["opt"] = "(ts,noeigen,calcfc)"
+inputs["opt"] = "(ts, noeigen, calcall)"
 print("Initializing Gaussian Runs for all conformations\n\n")
-gaussianProcesses(inputs)  #Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS sea
+#Runs gaussian inputs and tracks whether they are done or not. Once done they run gaussian TS search
+gaussianProcesses(inputs)
 finalOutput()

@@ -1,15 +1,14 @@
 #!/bin/env python3
-#small comment
 #Written By Taylor Nielson
 
 import sys, os,re, shutil, numpy as np, time, subprocess
 
-metals_lib = {"26":"FE","51":"SB","75":"RE","3":"LI","4":"BE","11":"NA","12":"MG"}
+
+#This list is currently incomplete But it is a mapping of metals and nonmetals to their atomic number
+metals_lib = {"26":"FE","51":"SB","75":"RE","3":"LI","4":"BE","11":"NA","12":"MG","78":"PT"}
 non_metals_lib = {"7":"N","15":"P","1":"H","6":"C","16":"S","8":"O","9":"F","10":"NE","17":"CL","18":"AR","34":"SE","35":"BR","36":"KR","53":"I","54":"XE","86":"RN"}
 
-
-
-#We need to add a crest_selectivity default
+#Loads defaults from the default file into the inputs variable
 def default():
 	inputs = {}
 	iF = open(os.path.expanduser("~/TSS/bin/.default"), "r")
@@ -35,7 +34,7 @@ def default():
 	return inputs
 
 
-#Need to include a crest_selectivity parameter
+#Parses the input file and overrides the defaults with values found in the input file
 def parseInput(inputFile, inputs,xyz_file):
 	name = inputFile.split('.')[0]
 	extension = inputFile.split('.')[1]
@@ -84,6 +83,10 @@ def parseInput(inputFile, inputs,xyz_file):
 			inputs["mem"] = line.split(':')[1]
 		elif "memper" in line:
 			inputs["memper"] = line.split(':')[1]
+		elif "confs" in line:
+			inputs["confs"] = line.split(':')[1]
+		elif "extra" in line:
+			inputs["extra"] = line.split(':')[1]
 #		elif "time" in line:
 #			inputs["time"] = line.split(':')[1]
 #		#Not Required
@@ -104,7 +107,7 @@ def parseInput(inputFile, inputs,xyz_file):
 	#coords = getCoords(inputs,xyz_file)
 	return inputs# coords
 
-
+#Gets the coordinates from the xyz file and puts them into a list
 def getCoords(inputs,xyz_file):
 	coords = []
 	#iF = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
@@ -119,11 +122,12 @@ def getCoords(inputs,xyz_file):
 	return coords
 	
 		
+#Builds a com file using values from input file and defaults for any not specified
 def buildCom(inputs, coords, f_name):
 	oF = open(f_name, 'w')
 	oF.write("%nprocshared=1\n")
-	oF.write("%mem="+ str(int(inputs["memper"])//int(inputs["numconfs"])) + "GB\n")
-	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral=ultrafine")
+	oF.write("%mem="+ str(int(inputs["memper"])//int(inputs["confs"])) + "GB\n")
+	oF.write("#opt=" + inputs["opt"].strip() + " freq=noraman " + inputs["method"].strip() + "/" + "genecp"  + " integral=ultrafine" + " " + inputs["extra"].strip())
 	oF.write("\n\n")
 	oF.write("TSS")
 	oF.write("\n\n")
@@ -149,7 +153,7 @@ def buildCom(inputs, coords, f_name):
 	oF.write("\n")
 	oF.close()
 
-
+#Writes the freezes in the modred file
 def writeFreezes(outFile,coords, inputs):
 	#Freezes = []
 	#libFile = open(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "r")
@@ -172,6 +176,8 @@ def writeFreezes(outFile,coords, inputs):
 			outFile.write("B " + str(bond[0]) + " " + str(bond[1]) + " F\n")
 	writeGenecp(outFile, coords, inputs)	
 
+
+#Writes the genecp section in the modred and TS search file
 def writeGenecp(outFile,coords, inputs):
 	metals, non_metals = getAtomTypes(coords)
 	if "modred" in inputs["opt"]:
@@ -189,6 +195,8 @@ def writeGenecp(outFile,coords, inputs):
 	outFile.write(inputs["mbasis"].strip())
 		
 
+
+#Gets a list of what types of atoms are in the file to be used in the write genecp section
 def getAtomTypes(coords):
 	metals = set()
 	non_metals = set() 
@@ -200,7 +208,7 @@ def getAtomTypes(coords):
                         metals.add(metals_lib[str(coord.split()[0])])
         	else:
                 	if coord[0].isalpha():
-                        	non_metals.add(coord[0])
+                        	non_metals.add(coord.split()[0])
                 	else:
                         	non_metals.add(non_metals_lib[str(coord.split()[0])])
 	return metals, non_metals
@@ -208,6 +216,7 @@ def getAtomTypes(coords):
 
 #Copies the base_input as defined in the input file and modifies it to build a new xyz file
 #Currently only does subractions
+#Currently not being used
 def buildLibraryInputs(lib_location):
 	shutil.copy(os.path.expanduser("~/TSS/libs/base_templates/" + inputs["library"].strip()), "temp.xyz")
 	tempF = open("temp.xyz", "r")
@@ -226,7 +235,7 @@ def buildLibraryInputs(lib_location):
 		else:
 			finalF.write(line)
 
-
+#Uses the results of the modred to make com files for the modred section
 def modredCrest(crest_file, inputs):
 	energies = []
 	acceptable_energy = True
@@ -258,12 +267,19 @@ def modredCrest(crest_file, inputs):
 			num_structures +=1
 		acceptable_energy = True
 	inputs["numconfs"] = num_structures
-	for i in range(0,len(coords_list)):
-		buildCom(inputs, coords_list[i], names_list[i])
+	#for i in range(0,len(coords_list)):
+#		buildCom(inputs, coords_list[i], names_list[i])
+	try:
+		for i in range(len(coords_list)-1, len(coords_list)-int(inputs["confs"])-1,-1):
+			buildCom(inputs, coords_list[i], names_list[i])
+	except:
+		print("okay\n")
 	os.chdir("../")
 # def modredRangeCreation():
 	#This will take the current modreds and create multiple ones with differing frozen bond lengths
 
+
+#Takes the log of the modred and gets the resulting xyz coords
 def logtoxyz(f_name):
 	inFile = open(f_name, 'r')
 	iF = inFile.readlines()
@@ -286,6 +302,8 @@ def logtoxyz(f_name):
 	z = 0
 	return coords
 
+
+#Runs the gaussian jobs and monitors them. If the modred finishes but doesn't have an imaginary vibration it is killed otherwise it runs the transition state search
 def gaussianProcesses(inputs):
 	commands = []
 	switched = []
@@ -333,6 +351,7 @@ def gaussianProcesses(inputs):
         	CheckPassFail(f)
 	print("all done")
 
+#Helper function to get the number of processes still alive
 def findAliveProcesses(processes):
 	num = 0
 	for p in processes:
@@ -342,12 +361,14 @@ def findAliveProcesses(processes):
 		return 2
 	return num
 
+#Helper function to make all the directories
 def makeDirectories():
 	os.mkdir("modred")
 	os.mkdir("gaussianTS")
 	os.mkdir("crest")
 	os.mkdir("completed")
 
+#Helper function to make and update the status file to see the status of the jobs
 def drawStatus(file_names, processes, optType, switched):
 	os.chdir('../')
 	statusFile = open("status", "w")
@@ -368,6 +389,7 @@ def drawStatus(file_names, processes, optType, switched):
 	statusFile.close()
 	os.chdir('modred')
 
+#Helper function to check the files for imaginary vibrations
 def checkNegVib(inFile):
 	iF = open(inFile, "r")
 	line = iF.readline()
@@ -378,7 +400,8 @@ def checkNegVib(inFile):
                         	return float(line.split() [3]) > 0
         	line = iF.readline()
 	iF.close()
-	return False	
+	return False
+#Helper function to check to see if the file finished without errors	
 def checkCompleted(inFile):
 	iF = open(inFile, "r")
 	for line in iF:
@@ -389,7 +412,7 @@ def checkCompleted(inFile):
 		return true
 	return false
 	
-
+#Helper function to check to see if the file has imaginary vibration and completed normally
 def CheckPassFail(inputFile):
 	pass1 = checkNegVib(inputFile)
 	if pass1:
@@ -398,7 +421,7 @@ def CheckPassFail(inputFile):
 			copyfile(inputFile, "../completed/" + inputFile)
 
 
-
+#Helper function to make the output for each file
 def outputFunc(f_name):
 	thval = ""
 	iF = open(f_name, 'r')
@@ -414,7 +437,7 @@ def outputFunc(f_name):
 	iF.close()
 	return thval
         
-
+#Creates the completed output file
 def finalOutput():
 	os.chdir("../completed")
 	divider = "-" * 50 + '\n'
