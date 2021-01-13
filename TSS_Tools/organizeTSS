@@ -1,0 +1,26 @@
+#!/bin/env python3
+
+
+import sys, os, subprocess
+from shutil import copyfile
+
+for file in os.listdir(os.getcwd()):
+	try:
+		tempfile = file.split('.')[0]
+		path = os.path.join(os.getcwd(), tempfile)
+		if os.path.isfile(file):
+			os.mkdir(path)
+			copyfile(file, path +"/" + file.split('/')[-1])
+			copyfile(os.getcwd() + "/templates/one.in", path + "/one.in")
+			copyfile(os.getcwd() + "/templates/test.sh", path + "/test.sh")
+			f = open(path+"/test.sh", "a");
+			secondTempfile = tempfile.split('/')[-1]
+			f.write("~/TSS/bin/NEWTSS " + "~/compute/TSS/Beta/Methane/" + secondTempfile + "/one.in ~/compute/TSS/Beta/Methane/" + secondTempfile + "/" + secondTempfile + ".xyz")
+			prevDir = os.getcwd()
+			os.chdir(path)
+			f.close()
+			command = 'sbatch -C m9 test.sh'	
+			os.system(command)
+			os.chdir(prevDir)
+	except:
+		print("An exception occured\n")
